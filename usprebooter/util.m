@@ -57,6 +57,9 @@ int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t* __restrict, uid_
 
 int spawnRoot(NSString* path, NSArray* args, NSString** stdOut, NSString** stdErr)
 {
+#if TARGET_OS_SIMULATOR
+    return 0;
+#else
     NSMutableArray* argsM = args.mutableCopy ?: [NSMutableArray new];
     [argsM insertObject:path.lastPathComponent atIndex:0];
     
@@ -116,7 +119,7 @@ int spawnRoot(NSString* path, NSArray* args, NSString** stdOut, NSString** stdEr
     {
         pid_t waitpids = waitpid(task_pid, &status, 0);
         if (waitpids != -1) {
-            NSLog(@"Child status %d", WEXITSTATUS(status));
+//            NSLog(@"Child status %d", WEXITSTATUS(status));
         } else
         {
 //            perror("waitpid");
@@ -140,6 +143,7 @@ int spawnRoot(NSString* path, NSArray* args, NSString** stdOut, NSString** stdEr
     }
 //    NSLog(@"%@", status);
     return WEXITSTATUS(status);
+#endif
 }
 
 
@@ -283,4 +287,28 @@ NSString *jbroot(NSString *path)
 {
     NSString* jbroot = find_jbroot();
     return [jbroot stringByAppendingPathComponent:path];
+}
+
+float roundLog(float input) {
+    double floored = floor(input);
+    double decimal = input - floored;
+    if (decimal < 0.159925) {
+        return floored;
+    } else if (decimal < 0.45943162) {
+        return (floored + 0.32192809);
+    } else if (decimal < 0.70043972) {
+        return (floored + 0.5849625);
+    } else if (decimal < 0.9068906) {
+        return (floored + 0.80735492);
+    } else {
+        return floored + 1;
+    }
+}
+
+bool isBetaiOS(void) {
+    char type[256];
+    size_t type_size = 256;
+    int ret = sysctlbyname("kern.osreleasetype", &type, &type_size, NULL, 0);
+    if (ret) return false;
+    return (!strcmp(type, "Beta"));
 }

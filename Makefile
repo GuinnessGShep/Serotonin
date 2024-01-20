@@ -42,21 +42,22 @@ Serotonin.tipa: $(wildcard **/*.c **/*.m **/*.swift **/*.plist **/*.xml)
 	cp RootHelperSample/Exploits/fastPathSign/fastPathSign ChOma/output/ios/tests
 	
 	echo "[*] Building Serotonin"
-	xcodebuild clean build -project Serotonin.xcodeproj -sdk iphoneos -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED="NO"
+	xcodebuild clean build -project Serotonin.xcodeproj -scheme usprebooter -sdk iphoneos -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED="NO" -derivedDataPath build
 	
 	echo "[*] Done building. Packaging for TS..."
 	$(MAKE) -C RootHelperSample
 	rm -rf Payload
 	rm -rf Serotonin.tipa
 	mkdir Payload
-	cp -a build/Release-iphoneos/usprebooter.app Payload
-	cp RootHelperSample/.theos/obj/debug/arm64/trolltoolsroothelper Payload/usprebooter.app/trolltoolsroothelper
-	install -m755 RootHelperSample/launchdshim/launchdhook/launchdhooksigned.dylib Payload/usprebooter.app/launchdhooksigned.dylib
-	install -m755 RootHelperSample/launchdshim/SpringBoardShim/SpringBoardHook/springboardhooksigned.dylib Payload/usprebooter.app/springboardhooksigned.dylib
-	install -m755 RootHelperSample/launchdshim/hideConfidentialText/.theos/obj/debug/hideConfidentialText.dylib Payload/usprebooter.app/hideconfidentialtext.dylib
-	cp RootHelperSample/launchdshim/hideConfidentialText/hideconfidentialtext.plist Payload/usprebooter.app/hideconfidentialtext.plist
-	$(LDID) -S./RootHelperSample/entitlements.plist -Cadhoc Payload/usprebooter.app/{fastPathSign,ldid,trolltoolsroothelper}
-	$(LDID) -Sent.plist -Cadhoc Payload/usprebooter.app/usprebooter
+	cp -a build/Build/Products/Release-iphoneos/Serotonin.app Payload
+	rm -rf Payload/Serotonin.app/Frameworks
+	cp RootHelperSample/.theos/obj/debug/arm64/trolltoolsroothelper Payload/Serotonin.app/trolltoolsroothelper
+	install -m755 RootHelperSample/launchdshim/launchdhook/launchdhooksigned.dylib Payload/Serotonin.app/launchdhooksigned.dylib
+	install -m755 RootHelperSample/launchdshim/SpringBoardShim/SpringBoardHook/springboardhooksigned.dylib Payload/Serotonin.app/springboardhooksigned.dylib
+	install -m755 RootHelperSample/launchdshim/hideConfidentialText/.theos/obj/debug/hideConfidentialText.dylib Payload/Serotonin.app/hideconfidentialtext.dylib
+	cp RootHelperSample/launchdshim/hideConfidentialText/hideconfidentialtext.plist Payload/Serotonin.app/hideconfidentialtext.plist
+	$(LDID) -S./RootHelperSample/entitlements.plist -Cadhoc Payload/Serotonin.app/{fastPathSign,ldid,trolltoolsroothelper}
+	$(LDID) -Sent.plist -Cadhoc Payload/Serotonin.app/Serotonin
 	zip -vr9 Serotonin.tipa Payload/ -x "*.DS_Store"
 
 apple-include:
@@ -92,4 +93,4 @@ apple-include:
 clean:
 	rm -rf Payload build RootHelperSample/.theos apple-include RootHelperSample/build FUCK.tipa Serotonin.tipa
 
-.PHONY: all clean
+.PHONY: all clean Serotonin.tipa

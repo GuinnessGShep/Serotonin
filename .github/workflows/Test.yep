@@ -1,0 +1,61 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive
+
+    - name: Set up Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
+    # Install Theos
+    - name: Install theos
+      run: bash -c "$(curl -fsSL https://raw.githubusercontent.com/roothide/theos/master/bin/install-theos)"
+
+    # Download and setup ct_bypass
+    - name: Download ct_bypass
+      run: |
+        curl -L -o /usr/local/bin/ct_bypass https://cdn.mineek.dev/serotonin/action_deps/ct_bypass
+        chmod +x /usr/local/bin/ct_bypass
+
+    # Install ldid
+    - name: Install ldid
+      run: |
+        brew unlink ldid
+        brew install ldid-procursus
+
+    # Building the project using xcodebuild
+    - name: Build with xcodebuild
+      run: xcodebuild clean build -sdk iphoneos -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED="NO"
+
+    # Additional steps based on the build script
+    - name: Additional build steps
+      run: |
+        cd RootHelperSample
+        ldid -Sentitlements.plist -Cadhoc ../usprebooter/ldid
+        ldid -Sentitlements.plist -Cadhoc ../usprebooter/fastPathSign
+        make -j$(sysctl -n hw.ncpu)
+        ldid -Sentitlements.plist -Cadhoc .theos/obj/debug/arm64/trolltoolsroothelper
+        mv .theos/obj/debug/arm64/trolltoolsroothelper ../build/Release-iphoneos/usprebooter.app/trolltoolsroothelper
+        cd ../build/Release-iphoneos
+        rm -rf Payload
+        rm -rf Serotonin.ipa
+        mkdir Payload
+        cp -r usprebooter.app Payload
+        ldid -S../../ent.plist -Cadhoc Payload/usprebooter.app/usprebooter
+        zip -vr Serotonin.ipa Payload/ -x "*.DS_Store"
+
+    # Upload the IPA
+    - name: Upload IPA
+      uses: actions/upload-artifact@v2
+      with:
+        name: Serotonin.ipa
+        path: build/Release-iphoneos/Serotonin.ipa

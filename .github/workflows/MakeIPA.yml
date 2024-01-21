@@ -15,7 +15,7 @@ jobs:
       run: git submodule update --init --recursive
 
     - name: Set up Xcode
-      run: sudo xcode-select -s '/Applications/Xcode_13.4.app/Contents/Developer'
+      run: sudo xcode-select -s '/Applications/Xcode_15.0.app/Contents/Developer'
     - name: Install dependencies
       run: |
         brew install swift

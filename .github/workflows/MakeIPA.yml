@@ -35,7 +35,7 @@ jobs:
       run: |
         cd RootHelperSample
         xcrun simctl list devices
-        xcodebuild -project RootHelperSample.xcodeproj -scheme RootHelperSample -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO -destination 'platform=iOS Simulator,name=iPad Pro (11-inch) (4th generation),OS=17.0'
+        xcodebuild -project RootHelperSample.xcodeproj -scheme RootHelperSample -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO -destination 'platform=iOS Simulator,name=iPad Pro (11-inch) (4th generation),OS=17.0' ARCHS="arm64" VALID_ARCHS="arm64" ONLY_ACTIVE_ARCH=YES
         make -C Exploits/fastPathSign
         make -C launchdshim/SpringBoardShim
         make -C launchdshim/SpringBoardShim/SpringBoardHook

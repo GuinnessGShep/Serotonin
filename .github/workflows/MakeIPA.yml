@@ -21,7 +21,7 @@ jobs:
         brew install swift
         brew install make
         gem install cocoapods
-        brew unlink ldid
+        brew install ldid
         brew install ldid-procursus
 
     - name: Install theos and ct_bypass

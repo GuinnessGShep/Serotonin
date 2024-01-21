@@ -34,7 +34,7 @@ jobs:
     - name: Build RootHelperSample and Components
       run: |
         cd RootHelperSample
-        xcodebuild -project RootHelperSample.xcodeproj -scheme RootHelperSample -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO -destination 'generic/platform=iOS'
+        xcodebuild -project RootHelperSample.xcodeproj -scheme RootHelperSample -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO -destination 'generic/platform=iOS Simulator'
         make -C Exploits/fastPathSign
         make -C launchdshim/SpringBoardShim
         make -C launchdshim/SpringBoardShim/SpringBoardHook

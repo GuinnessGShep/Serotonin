@@ -41,12 +41,6 @@ jobs:
         make -C launchdshim/SpringBoardShim/SpringBoardHook
         make -C launchdshim/launchdhook
         cd ..
-        
-    - name: Build usprebooter
-      run: |
-        cd usprebooter
-        xcodebuild -scheme usprebooter -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
-        cd ..
 
     - name: Build Serotonin
       run: |

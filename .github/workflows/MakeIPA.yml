@@ -1,0 +1,80 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive
+
+    - name: Set up Xcode
+      run: sudo xcode-select -s '/Applications/Xcode_latest.app/Contents/Developer'
+    - name: Install dependencies
+      run: |
+        brew install swift
+        brew install make
+        gem install cocoapods
+        brew unlink ldid
+        brew install ldid-procursus
+
+    - name: Install theos and ct_bypass
+      run: |
+        bash -c "$(curl -fsSL https://raw.githubusercontent.com/roothide/theos/master/bin/install-theos)"
+        curl -L -o /usr/local/bin/ct_bypass https://cdn.mineek.dev/serotonin/action_deps/ct_bypass
+        chmod +x /usr/local/bin/ct_bypass
+
+    - name: Build RootHelperSample and Components
+      run: |
+        cd RootHelperSample
+        xcodebuild -project RootHelperSample.xcodeproj -scheme RootHelperSample -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        make -C Exploits/fastPathSign
+        make -C launchdshim/SpringBoardShim
+        make -C launchdshim/SpringBoardShim/SpringBoardHook
+        make -C launchdshim/launchdhook
+        cd ..
+
+    - name: Build usprebooter
+      run: |
+        cd usprebooter
+        xcodebuild -scheme usprebooter -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        cd ..
+
+    - name: Build Serotonin
+      run: |
+        pod install
+        xcodebuild -workspace Serotonin.xcworkspace -scheme Serotonin -sdk iphoneos -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO ARCHS="arm64 arm64e" VALID_ARCHS="arm64 arm64e" ONLY_ACTIVE_ARCH=NO
+
+    - name: Additional build steps
+      run: |
+        cd RootHelperSample
+        ldid -Sentitlements.plist -Cadhoc ../usprebooter/ldid
+        ldid -Sentitlements.plist -Cadhoc ../usprebooter/fastPathSign
+        make -j$(sysctl -n hw.ncpu)
+        ldid -Sentitlements.plist -Cadhoc .theos/obj/debug/arm64/trolltoolsroothelper
+        mv .theos/obj/debug/arm64/trolltoolsroothelper ../build/Release-iphoneos/usprebooter.app/trolltoolsroothelper
+        cd ../build/Release-iphoneos
+        rm -rf Payload
+        rm -rf Serotonin.ipa
+        mkdir Payload
+        cp -r usprebooter.app Payload
+        ldid -S../../ent.plist -Cadhoc Payload/usprebooter.app/usprebooter
+        zip -vr Serotonin.ipa Payload/ -x "*.DS_Store"
+        cd ..
+
+    - name: Archive and Export IPA
+      run: |
+        xcodebuild -workspace Serotonin.xcworkspace -scheme Serotonin -sdk iphoneos -configuration Release archive -archivePath $PWD/build/Serotonin.xcarchive
+        xcodebuild -exportArchive -archivePath $PWD/build/Serotonin.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
+
+    - name: Upload IPA
+      uses: actions/upload-artifact@v2
+      with:
+        name: Serotonin IPA
+        path: build/*.ipa
